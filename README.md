@@ -13,5 +13,5 @@ In order to use the k-folded methodology for image classification, is very impor
 5. Once script running is completed, a dataset,csv file has been generated. Which will be utilized to feed the Jupyter Notebook for Image Classifier k-folded
 
 # Notes:
-## 1 The main model utilized by using transfer learning is InceptionV3, with maximum input shape of (299, 299) see more details in keras.applications for more models.
+## 1 The transfer learning model is InceptionV3, with maximum input shape of (299, 299) see more details in keras.applications for more models.
 ## 2 You must install Anaconda or miniconda or python pyenv, I prefer to use anaconda/miniconda, since these packages has more available libraries with conda cmd
