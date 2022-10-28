@@ -1,4 +1,4 @@
-# 1.-ImageClassification
+# ImageClassification by using transfer learning
 
 ## Dataset preparation
 
