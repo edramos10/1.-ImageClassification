@@ -1,6 +1,6 @@
 # 1.-ImageClassification
 
-# Dataset preparation
+## Dataset preparation
 
 In order to use the k-folded methodology for image classification, is very important to generate a context filename "dataset.csv". 
 
