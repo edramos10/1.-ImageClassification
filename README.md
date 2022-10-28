@@ -1,10 +1,10 @@
-# 1.-ImageClassification
+# ImageClassification by using transfer learning
 
-# Dataset preparation
+## Dataset preparation
 
 In order to use the k-folded methodology for image classification, is very important to generate a context filename "dataset.csv". 
 
-# Usage
+## Usage
 
 1. Take several pictures for every single class.
 2. Store them per folder class name.
