@@ -13,7 +13,7 @@ In order to use the k-folded methodology for image classification, is very impor
 5. Once script running is completed, a dataset,csv file has been generated. Which will be utilized to feed the Jupyter Notebook for Image Classifier k-folded
 
 ## Training_notebook_mlflow.ipynb
-###Prework:
+### Prework:
 1. Once mlflow-extend and mlflow is installed within your environment, activate the environment, e.g., conda activate [environment].
 2. Go to your directory of repository.
 3. Run the mlflow server thru: mlflow server --backend-store-uri sqlite:///mlflow.db --default-artifact-root ./artifacts --host 0.0.0.0 --port 1234
