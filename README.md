@@ -7,7 +7,7 @@ In order to use the k-folded methodology for image classification, is very impor
 ## Usage
 
 1. Take several pictures for every single class.
-2. Store them per folder class name:\n
+2. Store them per folder class name:<br/>
   ../Training/
       /Class1
       /Class2
