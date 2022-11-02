@@ -8,23 +8,23 @@ In order to use the k-folded methodology for image classification, is very impor
 
 1. Take several pictures for every single class.
 2. Store them per folder class name:<br/>
-  ../Training/
-      /Class1
-      /Class2
-      /Class3
-      /Class4
-     .
-     .
-     ./ClassN
+  ../Training/<br/>
+      /Class1<br/>
+      /Class2<br/>
+      /Class3<br/>
+      /Class4<br/>
+     .<br/>
+     .<br/>
+     ./ClassN<br/>
     
-   ../Testing
-      /Class1
-      /Class2
-      /Class3
-      /Class4
-      .
-      .
-      ./ClassN/
+   ../Testing<br/>
+      /Class1<br/>
+      /Class2<br/>
+      /Class3<br/>
+      /Class4<br/>
+      .<br/>
+      .<br/>
+      ./ClassN/<br/>
 3. Activate your python environment, and then, run next command: python dataset_preparation.py
 4. Enters the dataset training parent directory, where all the class folders are stored, e.g. "c:\users\mlops\data\Tranining"
 5. Once script running is completed, a dataset,csv file has been generated. Which will be utilized to feed the Jupyter Notebook for Image Classifier k-folded
