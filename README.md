@@ -36,7 +36,7 @@ In order to use the k-folded methodology for image classification, is very impor
 3. Run the mlflow server thru: mlflow server --backend-store-uri sqlite:///mlflow.db --default-artifact-root ./artifacts --host 0.0.0.0 --port 1234
 4. Your MLflow server is activated and will monitor the entire traning, evaluation and registry model. Open a browser and type http://127.0.0.1:1234.
 
-
+## ImageClassification.py
 # Notes:
 ## 1 The transfer learning model is InceptionV3, with maximum input shape of (299, 299) see more details in keras.applications for more models.
 ## 2 You must install Anaconda or miniconda or python pyenv, I prefer to use anaconda/miniconda, since these packages has more available libraries with conda cmd
