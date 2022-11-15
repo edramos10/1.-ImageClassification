@@ -23,7 +23,7 @@ from sklearn.model_selection import StratifiedKFold ,KFold ,RepeatedKFold, train
 from sklearn.metrics import classification_report, roc_curve,precision_recall_curve, confusion_matrix, accuracy_score, f1_score, precision_score, recall_score
 
 class dataset_preparation:
-    def generate_csv(dataset_dir):
+    def generate_df(dataset_dir):
         os.chdir(dataset_dir)
 
         folders =os.listdir(dataset_dir)
@@ -51,11 +51,7 @@ class dataset_preparation:
             df = pd.concat([df,clase[i]])
             i+=1
 
-        # Creating X, Y for training 
-        train_y = df.Class
-        train_x = df.drop(['Class'],axis=1)
-
-        return Number_classes, df, train_x, train_y
+        return Number_classes, df
 
     def Image_augmentation(IMG_SIZE):
         datagen_kwargs = dict(rescale=1./255,rotation_range=10,
@@ -90,7 +86,7 @@ class dataset_preparation:
             f.write(labels)
 
 class training:
-    def get_model(IMG_SIZE):
+    def get_model(IMG_SIZE, Number_classes):
         METRICS = [
             tf.keras.metrics.TruePositives(name='tp'),
             tf.keras.metrics.FalsePositives(name='fp'),
@@ -115,7 +111,11 @@ class training:
         model.compile(loss='categorical_crossentropy', optimizer=optimizers.SGD(learning_rate=1e-4, momentum=0.9), metrics=METRICS)
         return model
 
-    def mlflow_train(server, host, EXPERIMENT_NAME, IMG_SIZE, EPOCHS, N_SPLIT, BATCH_SIZE, df, train_x, train_y, datagen_kwargs):
+    def mlflow_train(Number_classes, server, host, EXPERIMENT_NAME, IMG_SIZE, EPOCHS, N_SPLIT, BATCH_SIZE, df, datagen_kwargs):
+        # Creating X, Y for training 
+        train_y = df.Class
+        train_x = df.drop(['Class'],axis=1)
+        
         mlflow.set_tracking_uri(server + ":" + host)
 
         mlflow.set_experiment(EXPERIMENT_NAME)
@@ -140,16 +140,14 @@ class training:
                 x_valid_df = df.iloc[val_idx]
                 j+=1
 
-
                 training_set = train_datagen.flow_from_dataframe(dataframe=x_train_df, train_dir=None, x_col="Image", y_col="Class",shuffle=True, class_mode="categorical",validate_filenames=True, 
                                                                 target_size=(IMG_SIZE,IMG_SIZE), batch_size=BATCH_SIZE)
                 
                 validation_set = validation_datagen.flow_from_dataframe(dataframe=x_valid_df, train_dir=None, x_col="Image", y_col="Class",shuffle=False ,class_mode="categorical",validate_filenames=True,
                                                                         target_size=(IMG_SIZE,IMG_SIZE), batch_size=BATCH_SIZE)
-                
-                model_test = training.get_model(IMG_SIZE)
-                
 
+                model_test = training.get_model(IMG_SIZE,Number_classes)
+                
                 history = model_test.fit( training_set, validation_data=validation_set, epochs = EPOCHS, steps_per_epoch=(x_train_df.shape[0])/BATCH_SIZE)  
                 gc.collect()
                 
@@ -229,14 +227,13 @@ if __name__=="__main__":
     server = 'http://127.0.0.1'
     host = '1234'
 
-    Number_classes, df, train_x, train_y = dataset_preparation.generate_csv(TRAIN_PATH)
+    Number_classes, df = dataset_preparation.generate_df(TRAIN_PATH)
 
     datagen_kwargs = dataset_preparation.Image_augmentation(IMG_SIZE)
 
-    
     N_SPLIT = Number_classes+1
 
-    training.mlflow_train(server, host, EXPERIMENT_NAME, IMG_SIZE, EPOCHS, N_SPLIT, BATCH_SIZE, df, train_x, train_y, datagen_kwargs)
+    training.mlflow_train(Number_classes,server, host, EXPERIMENT_NAME, IMG_SIZE, EPOCHS, N_SPLIT, BATCH_SIZE, df, datagen_kwargs)
 
 
     
