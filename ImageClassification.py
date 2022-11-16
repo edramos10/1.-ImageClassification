@@ -37,14 +37,12 @@ class dataset_preparation:
 
         return classes
 
-    def Image_augmentation(DATASET_DIR,TRAIN_PATH,IMG_SIZE):
+    def Image_augmentation():
         datagen_kwargs = dict(rescale=1./255,rotation_range=10,
         shear_range=0.1,
         zoom_range=0.1,
         brightness_range=[0,1],
         horizontal_flip=True)
-            
-        dataset_preparation.Create_Images_for_training(DATASET_DIR,TRAIN_PATH,IMG_SIZE,**datagen_kwargs)
 
         return datagen_kwargs
 
@@ -226,7 +224,7 @@ if __name__=="__main__":
     TRAIN_PATH='C:/Users/anavarro4/Documents/mlprojects/Dataset/PCB_Train'
     TESTING_DATA_DIR='C:/Users/anavarro4/Documents/mlprojects/Dataset/PCB_Test'
     IMG_SIZE = 299
-    EPOCHS = 3
+    EPOCHS = 10
     BATCH_SIZE = 8
     EXPERIMENT_NAME='KEYPADSv1'
     SERVER = 'http://127.0.0.1'
@@ -234,7 +232,7 @@ if __name__=="__main__":
 
     classes = dataset_preparation.generate_csv(DATASET_DIR, TRAIN_PATH)
 
-    datagen_kwargs = dataset_preparation.Image_augmentation(DATASET_DIR, TRAIN_PATH, IMG_SIZE)
+    datagen_kwargs = dataset_preparation.Image_augmentation()
 
     training.mlflow_train(PROJECT_DIR, DATASET_DIR, TESTING_DATA_DIR, SERVER, HOST, EXPERIMENT_NAME, classes, IMG_SIZE, EPOCHS, BATCH_SIZE, datagen_kwargs)
 
