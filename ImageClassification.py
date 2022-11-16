@@ -13,59 +13,44 @@ from keras.optimizers import Adam, SGD
 from keras.models import Model, Sequential
 from keras.layers import Dense, Dropout, Flatten
 from keras.callbacks import EarlyStopping, ModelCheckpoint
-from keras import backend as K
 from keras import applications, optimizers
 from keras.utils import to_categorical
-from keras.preprocessing import image
 from keras.preprocessing.image import ImageDataGenerator
 
 from sklearn.model_selection import StratifiedKFold ,KFold ,RepeatedKFold, train_test_split
 from sklearn.metrics import classification_report, roc_curve,precision_recall_curve, confusion_matrix, accuracy_score, f1_score, precision_score, recall_score
 
 class dataset_preparation:
-    def generate_df(dataset_dir):
-        os.chdir(dataset_dir)
+    def generate_csv(DATASET_DIR, TRAIN_PATH):
+        os.chdir(TRAIN_PATH)
 
-        folders =os.listdir(dataset_dir)
+        folders =os.listdir(TRAIN_PATH)
+        print(folders)
         files = []
         classes = []
 
         for folder in folders:
             classes.append(folder)
             for file in os.listdir(folder):
-                files.append([dataset_dir+"/"+folder+"/"+file, folder])
-            pd.DataFrame(files, columns=['Image', 'Class']).to_csv('dataset.csv',index=False)
+                files.append([TRAIN_PATH+"/"+folder+"/"+file, folder])
+            pd.DataFrame(files, columns=['Image', 'Class']).to_csv(DATASET_DIR+'/dataset.csv',index=False)
 
-        Number_classes = len(classes)
+        return classes
 
-        train = pd.read_csv(TRAIN_PATH + '/dataset.csv')
-
-        # As we are going to divide dataset
-        df = train.copy()
-
-        # Increasing the size of dataset
-        clase = []
-        for label in classes:
-            i = 0
-            clase.append(train[train["Class"]==label])
-            df = pd.concat([df,clase[i]])
-            i+=1
-
-        return Number_classes, df
-
-    def Image_augmentation(IMG_SIZE):
+    def Image_augmentation(DATASET_DIR,TRAIN_PATH,IMG_SIZE):
         datagen_kwargs = dict(rescale=1./255,rotation_range=10,
         shear_range=0.1,
         zoom_range=0.1,
         brightness_range=[0,1],
         horizontal_flip=True)
             
-        dataset_preparation.Create_Images_for_training(IMG_SIZE,IMG_SIZE,**datagen_kwargs)
+        dataset_preparation.Create_Images_for_training(DATASET_DIR,TRAIN_PATH,IMG_SIZE,**datagen_kwargs)
 
         return datagen_kwargs
 
-    def Create_Images_for_training(shape_size_W,shape_size_H,**datagen_kwargs):
-        IMAGE_SHAPE=(shape_size_W, shape_size_H)
+    def Create_Images_for_training(DATASET_DIR,TRAIN_PATH,IMG_SIZE,**datagen_kwargs):
+        os.chdir(DATASET_DIR)
+        IMAGE_SHAPE=(IMG_SIZE, IMG_SIZE)
         train_datagen = tf.keras.preprocessing.image.ImageDataGenerator(**datagen_kwargs)
         train_generator = train_datagen.flow_from_directory(TRAIN_PATH, batch_size=32, subset="training", seed=42, shuffle=True, target_size=IMAGE_SHAPE)
         for image_batch, label_batch in train_generator:
@@ -111,12 +96,30 @@ class training:
         model.compile(loss='categorical_crossentropy', optimizer=optimizers.SGD(learning_rate=1e-4, momentum=0.9), metrics=METRICS)
         return model
 
-    def mlflow_train(Number_classes, server, host, EXPERIMENT_NAME, IMG_SIZE, EPOCHS, N_SPLIT, BATCH_SIZE, df, datagen_kwargs):
+    def mlflow_train(PROJECT_DIR, DATASET_DIR, TESTING_DATA_DIR, SERVER, HOST, EXPERIMENT_NAME, classes, IMG_SIZE, EPOCHS, BATCH_SIZE, datagen_kwargs):
+        os.chdir(PROJECT_DIR)
+
+        Number_classes = len(classes)
+        N_SPLIT = Number_classes+1
+
+        train = pd.read_csv(DATASET_DIR + '/dataset.csv')
+
+        # As we are going to divide dataset
+        df = train.copy()
+
+        # Increasing the size of dataset
+        clase = []
+        for label in classes:
+            i = 0
+            clase.append(train[train["Class"]==label])
+            df = pd.concat([df,clase[i]])
+            i+=1
+
         # Creating X, Y for training 
         train_y = df.Class
         train_x = df.drop(['Class'],axis=1)
         
-        mlflow.set_tracking_uri(server + ":" + host)
+        mlflow.set_tracking_uri(SERVER + ":" + HOST)
 
         mlflow.set_experiment(EXPERIMENT_NAME)
         experiment=mlflow.get_experiment_by_name(EXPERIMENT_NAME)
@@ -151,11 +154,11 @@ class training:
                 history = model_test.fit( training_set, validation_data=validation_set, epochs = EPOCHS, steps_per_epoch=(x_train_df.shape[0])/BATCH_SIZE)  
                 gc.collect()
                 
-            testing.test(model_test)
+            testing.test(model_test, TESTING_DATA_DIR)
             mlflow.end_run()
 
 class testing:
-    def testGen(IMG_SIZE):
+    def testGen(TESTING_DATA_DIR, IMG_SIZE):
         test_datagen = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1.0/255.0)
         test_data_dir=TESTING_DATA_DIR
         Test_generator = test_datagen.flow_from_directory(
@@ -167,8 +170,8 @@ class testing:
                 
         return Test_generator
 
-    def test(loaded_model):
-        Images4ValidationGenerator=testing.testGen(IMG_SIZE)
+    def test(loaded_model, TESTING_DATA_DIR):
+        Images4ValidationGenerator=testing.testGen(TESTING_DATA_DIR,IMG_SIZE)
         y_test=Images4ValidationGenerator.classes
         class_labels = Images4ValidationGenerator.class_indices
         class_labels = {v: k for k, v in class_labels.items()}
@@ -218,22 +221,22 @@ if __name__=="__main__":
     physical_devices=tf.config.list_physical_devices("GPU")
     tf.config.experimental.set_memory_growth(physical_devices[0],True)
 
-    TRAIN_PATH='C:/Users/anavarro4/PCB_Train'
-    TESTING_DATA_DIR='C:/Users/anavarro4/PCB_Test'
+    PROJECT_DIR='C:/Users/anavarro4/Documents/mlprojects' #Ubicacion para guardar la carpeta artifacts
+    DATASET_DIR='C:/Users/anavarro4/Documents/mlprojects/Dataset' #Ubicacion para guardar dataset.csv y labels.txt
+    TRAIN_PATH='C:/Users/anavarro4/Documents/mlprojects/Dataset/PCB_Train'
+    TESTING_DATA_DIR='C:/Users/anavarro4/Documents/mlprojects/Dataset/PCB_Test'
     IMG_SIZE = 299
-    EPOCHS = 5
+    EPOCHS = 3
     BATCH_SIZE = 8
     EXPERIMENT_NAME='KEYPADSv1'
-    server = 'http://127.0.0.1'
-    host = '1234'
+    SERVER = 'http://127.0.0.1'
+    HOST = '1234'
 
-    Number_classes, df = dataset_preparation.generate_df(TRAIN_PATH)
+    classes = dataset_preparation.generate_csv(DATASET_DIR, TRAIN_PATH)
 
-    datagen_kwargs = dataset_preparation.Image_augmentation(IMG_SIZE)
+    datagen_kwargs = dataset_preparation.Image_augmentation(DATASET_DIR, TRAIN_PATH, IMG_SIZE)
 
-    N_SPLIT = Number_classes+1
-
-    training.mlflow_train(Number_classes,server, host, EXPERIMENT_NAME, IMG_SIZE, EPOCHS, N_SPLIT, BATCH_SIZE, df, datagen_kwargs)
+    training.mlflow_train(PROJECT_DIR, DATASET_DIR, TESTING_DATA_DIR, SERVER, HOST, EXPERIMENT_NAME, classes, IMG_SIZE, EPOCHS, BATCH_SIZE, datagen_kwargs)
 
 
     
