@@ -40,4 +40,4 @@ In order to use the k-folded methodology for image classification, is very impor
 # Notes:
 ## 1 The transfer learning model is InceptionV3, with maximum input shape of (299, 299) see more details in keras.applications for more models.
 ## 2 You must install Anaconda or miniconda or python pyenv, I prefer to use anaconda/miniconda, since these packages has more available libraries with conda cmd
-## 3 Once, you download the repository, and invironment has been created, you can run pip install -r requiriements.txt in order to install all the dependencies needed to run the ImageClassification Training phase
+## 3 Once, you download the repository, and invironment has been created, you can run pip install -r requirements.txt in order to install all the dependencies needed to run the ImageClassification Training phase
