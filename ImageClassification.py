@@ -37,10 +37,11 @@ class dataset_preparation:
 
         return classes
 
-    def Image_augmentation():
-        datagen_kwargs = dict(rescale=1./255,rotation_range=10,
-        shear_range=0.1,
-        zoom_range=0.1,
+    def Image_augmentation(rotation, shear, zoom):
+        datagen_kwargs = dict(rescale=1./255,
+        rotation_range=rotation,
+        shear_range=shear,
+        zoom_range=zoom,
         brightness_range=[0,1],
         horizontal_flip=True)
 
@@ -219,20 +220,23 @@ if __name__=="__main__":
     physical_devices=tf.config.list_physical_devices("GPU")
     tf.config.experimental.set_memory_growth(physical_devices[0],True)
 
-    PROJECT_DIR='C:/Users/anavarro4/Documents/mlprojects' #Ubicacion para guardar la carpeta artifacts
-    DATASET_DIR='C:/Users/anavarro4/Documents/mlprojects/Dataset' #Ubicacion para guardar dataset.csv y labels.txt
-    TRAIN_PATH='C:/Users/anavarro4/Documents/mlprojects/Dataset/PCB_Train'
-    TESTING_DATA_DIR='C:/Users/anavarro4/Documents/mlprojects/Dataset/PCB_Test'
+    PROJECT_DIR='G:\Public\DeepLearning\TOUCHPADS'#'C:/Users/anavarro4/Documents/mlprojects' #Ubicacion para guardar la carpeta artifacts
+    DATASET_DIR='G:\Public\DeepLearning\TOUCHPADS\Dataset'#'C:/Users/anavarro4/Documents/mlprojects/Dataset' #Ubicacion para guardar dataset.csv y labels.txt
+    TRAIN_PATH='G:\Public\DeepLearning\TOUCHPADS\Dataset\Train'#'C:/Users/anavarro4/Documents/mlprojects/Dataset/PCB_Train'
+    TESTING_DATA_DIR='G:\Public\DeepLearning\TOUCHPADS\Dataset\Test'#'C:/Users/anavarro4/Documents/mlprojects/Dataset/PCB_Test'
     IMG_SIZE = 299
-    EPOCHS = 10
+    EPOCHS = 5
     BATCH_SIZE = 8
-    EXPERIMENT_NAME='KEYPADSv1'
+    EXPERIMENT_NAME='KEYPADSv2'
     SERVER = 'http://127.0.0.1'
     HOST = '1234'
 
     classes = dataset_preparation.generate_csv(DATASET_DIR, TRAIN_PATH)
 
-    datagen_kwargs = dataset_preparation.Image_augmentation()
+    rotation_range=10
+    shear_range=0.1
+    zoom_range=0.1
+    datagen_kwargs = dataset_preparation.Image_augmentation(rotation_range, shear_range, zoom_range)
 
     training.mlflow_train(PROJECT_DIR, DATASET_DIR, TESTING_DATA_DIR, SERVER, HOST, EXPERIMENT_NAME, classes, IMG_SIZE, EPOCHS, BATCH_SIZE, datagen_kwargs)
 
