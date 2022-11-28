@@ -22,6 +22,7 @@ from sklearn.metrics import classification_report, roc_curve,precision_recall_cu
 
 class dataset_preparation:
     def generate_csv(DATASET_DIR, TRAIN_PATH):
+        '''Genera archivo CSV con la ubicacion de las imagenes y sus respectivas clases.'''
         os.chdir(TRAIN_PATH)
 
         folders =os.listdir(TRAIN_PATH)
@@ -38,6 +39,7 @@ class dataset_preparation:
         return classes
 
     def Image_augmentation(rotation, shear, zoom):
+        '''Define parametros para la aumentacion de imagenes.'''
         datagen_kwargs = dict(rescale=1./255,
         rotation_range=rotation,
         shear_range=shear,
@@ -71,6 +73,7 @@ class dataset_preparation:
 
 class training:
     def get_model(IMG_SIZE, Number_classes):
+        '''Define arquitectura del modelo.'''
         METRICS = [
             tf.keras.metrics.TruePositives(name='tp'),
             tf.keras.metrics.FalsePositives(name='fp'),
@@ -96,6 +99,7 @@ class training:
         return model
 
     def mlflow_train(PROJECT_DIR, DATASET_DIR, TESTING_DATA_DIR, SERVER, HOST, EXPERIMENT_NAME, classes, IMG_SIZE, EPOCHS, BATCH_SIZE, datagen_kwargs):
+        '''Entrena el modelo y lo registra en mlflow.'''
         os.chdir(PROJECT_DIR)
 
         Number_classes = len(classes)
@@ -158,6 +162,7 @@ class training:
 
 class testing:
     def testGen(TESTING_DATA_DIR, IMG_SIZE):
+        '''Genera directorio para pruebas.'''
         test_datagen = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1.0/255.0)
         test_data_dir=TESTING_DATA_DIR
         Test_generator = test_datagen.flow_from_directory(
@@ -170,6 +175,7 @@ class testing:
         return Test_generator
 
     def test(loaded_model, TESTING_DATA_DIR):
+        '''Calcula y registra las metricas en mlflow'''
         Images4ValidationGenerator=testing.testGen(TESTING_DATA_DIR,IMG_SIZE)
         y_test=Images4ValidationGenerator.classes
         class_labels = Images4ValidationGenerator.class_indices
