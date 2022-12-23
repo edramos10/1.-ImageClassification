@@ -11,3 +11,6 @@ scipy==1.9.1
 tensorflow==2.10.0
 mlflow-extend
 opencv-python
+fastapi
+uvicorn
+wandb
