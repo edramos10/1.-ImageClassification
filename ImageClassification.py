@@ -21,8 +21,9 @@ from sklearn.model_selection import StratifiedKFold ,KFold ,RepeatedKFold, train
 from sklearn.metrics import classification_report, roc_curve,precision_recall_curve, confusion_matrix, accuracy_score, f1_score, precision_score, recall_score
 
 class dataset_preparation:
-    def generate_csv(DATASET_DIR, TRAIN_PATH):
+    def generate_csv(PROJECT_DIR):
         '''Genera archivo CSV con la ubicacion de las imagenes y sus respectivas clases.'''
+        TRAIN_PATH = PROJECT_DIR + '/Dataset/Train'
         os.chdir(TRAIN_PATH)
 
         folders =os.listdir(TRAIN_PATH)
@@ -34,7 +35,7 @@ class dataset_preparation:
             classes.append(folder)
             for file in os.listdir(folder):
                 files.append([TRAIN_PATH+"/"+folder+"/"+file, folder])
-            pd.DataFrame(files, columns=['Image', 'Class']).to_csv(DATASET_DIR+'/dataset.csv',index=False)
+            pd.DataFrame(files, columns=['Image', 'Class']).to_csv(PROJECT_DIR+'/Dataset/dataset.csv',index=False)
 
         return classes
 
@@ -45,12 +46,14 @@ class dataset_preparation:
         shear_range=shear,
         zoom_range=zoom,
         brightness_range=[0,1],
+        vertical_flip=True,
         horizontal_flip=True)
 
         return datagen_kwargs
 
-    def Create_Images_for_training(DATASET_DIR,TRAIN_PATH,IMG_SIZE,**datagen_kwargs):
-        os.chdir(DATASET_DIR)
+    def Create_Images_for_training(PROJECT_DIR, IMG_SIZE,**datagen_kwargs):
+        TRAIN_PATH = PROJECT_DIR + '/Dataset/Train'
+        os.chdir(PROJECT_DIR+'/Dataset')
         IMAGE_SHAPE=(IMG_SIZE, IMG_SIZE)
         train_datagen = tf.keras.preprocessing.image.ImageDataGenerator(**datagen_kwargs)
         train_generator = train_datagen.flow_from_directory(TRAIN_PATH, batch_size=32, subset="training", seed=42, shuffle=True, target_size=IMAGE_SHAPE)
@@ -72,7 +75,7 @@ class dataset_preparation:
             f.write(labels)
 
 class training:
-    def get_model(IMG_SIZE, Number_classes):
+    def get_model(architecture, IMG_SIZE, Number_classes):
         '''Define arquitectura del modelo.'''
         METRICS = [
             tf.keras.metrics.TruePositives(name='tp'),
@@ -87,7 +90,7 @@ class training:
             tf.keras.metrics.SensitivityAtSpecificity(0.5),
         ]
 
-        base_model =applications.InceptionV3(weights='imagenet', include_top=False, input_shape=(IMG_SIZE, IMG_SIZE, 3))
+        base_model =architecture(weights='imagenet', include_top=False, input_shape=(IMG_SIZE, IMG_SIZE, 3))
         add_model = Sequential()
         add_model.add(Flatten(input_shape=base_model.output_shape[1:]))
         add_model.add(Dropout(0.3))
@@ -98,14 +101,14 @@ class training:
         model.compile(loss='categorical_crossentropy', optimizer=optimizers.SGD(learning_rate=1e-4, momentum=0.9), metrics=METRICS)
         return model
 
-    def mlflow_train(PROJECT_DIR, DATASET_DIR, TESTING_DATA_DIR, SERVER, HOST, EXPERIMENT_NAME, classes, IMG_SIZE, EPOCHS, BATCH_SIZE, datagen_kwargs):
+    def mlflow_train(PROJECT_DIR, SERVER, HOST, EXPERIMENT_NAME, classes, IMG_SIZE, EPOCHS, BATCH_SIZE, architecture, datagen_kwargs):
         '''Entrena el modelo y lo registra en mlflow.'''
         os.chdir(PROJECT_DIR)
 
         Number_classes = len(classes)
         N_SPLIT = Number_classes+1
 
-        train = pd.read_csv(DATASET_DIR + '/dataset.csv')
+        train = pd.read_csv(PROJECT_DIR + '/Dataset/dataset.csv')
 
         # As we are going to divide dataset
         df = train.copy()
@@ -152,12 +155,12 @@ class training:
                 validation_set = validation_datagen.flow_from_dataframe(dataframe=x_valid_df, train_dir=None, x_col="Image", y_col="Class",shuffle=False ,class_mode="categorical",validate_filenames=True,
                                                                         target_size=(IMG_SIZE,IMG_SIZE), batch_size=BATCH_SIZE)
 
-                model_test = training.get_model(IMG_SIZE,Number_classes)
+                model_test = training.get_model(architecture, IMG_SIZE,Number_classes)
                 
                 history = model_test.fit( training_set, validation_data=validation_set, epochs = EPOCHS, steps_per_epoch=(x_train_df.shape[0])/BATCH_SIZE)  
                 gc.collect()
                 
-            testing.test(model_test, TESTING_DATA_DIR)
+            testing.test(model_test, PROJECT_DIR)
             mlflow.end_run()
 
 class testing:
@@ -174,7 +177,8 @@ class testing:
                 
         return Test_generator
 
-    def test(loaded_model, TESTING_DATA_DIR):
+    def test(loaded_model, PROJECT_DIR):
+        TESTING_DATA_DIR = PROJECT_DIR + '/Dataset/Test'
         '''Calcula y registra las metricas en mlflow'''
         Images4ValidationGenerator=testing.testGen(TESTING_DATA_DIR,IMG_SIZE)
         y_test=Images4ValidationGenerator.classes
@@ -226,25 +230,23 @@ if __name__=="__main__":
     physical_devices=tf.config.list_physical_devices("GPU")
     tf.config.experimental.set_memory_growth(physical_devices[0],True)
 
-    PROJECT_DIR='G:\Public\DeepLearning\TOUCHPADS'#'C:/Users/anavarro4/Documents/mlprojects' #Ubicacion para guardar la carpeta artifacts
-    DATASET_DIR='G:\Public\DeepLearning\TOUCHPADS\Dataset'#'C:/Users/anavarro4/Documents/mlprojects/Dataset' #Ubicacion para guardar dataset.csv y labels.txt
-    TRAIN_PATH='G:\Public\DeepLearning\TOUCHPADS\Dataset\Train'#'C:/Users/anavarro4/Documents/mlprojects/Dataset/PCB_Train'
-    TESTING_DATA_DIR='G:\Public\DeepLearning\TOUCHPADS\Dataset\Test'#'C:/Users/anavarro4/Documents/mlprojects/Dataset/PCB_Test'
+    PROJECT_DIR='C:/Users/anavarro4/Documents/mlprojects/BACKLIGHT & PRG & LOW-BAT TEST'
     IMG_SIZE = 299
-    EPOCHS = 5
+    EPOCHS = 10
     BATCH_SIZE = 8
-    EXPERIMENT_NAME='KEYPADSv2'
+    architecture= applications.InceptionV3
+    EXPERIMENT_NAME='KEYPAD-LEDS'
     SERVER = 'http://127.0.0.1'
     HOST = '1234'
 
-    classes = dataset_preparation.generate_csv(DATASET_DIR, TRAIN_PATH)
+    classes = dataset_preparation.generate_csv(PROJECT_DIR)
 
     rotation_range=10
     shear_range=0.1
     zoom_range=0.1
     datagen_kwargs = dataset_preparation.Image_augmentation(rotation_range, shear_range, zoom_range)
 
-    training.mlflow_train(PROJECT_DIR, DATASET_DIR, TESTING_DATA_DIR, SERVER, HOST, EXPERIMENT_NAME, classes, IMG_SIZE, EPOCHS, BATCH_SIZE, datagen_kwargs)
+    training.mlflow_train(PROJECT_DIR, SERVER, HOST, EXPERIMENT_NAME, classes, IMG_SIZE, EPOCHS, BATCH_SIZE, architecture, datagen_kwargs)
 
 
     
