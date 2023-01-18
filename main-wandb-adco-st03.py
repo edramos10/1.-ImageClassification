@@ -35,7 +35,12 @@ EXPERIMENT_NAME='ADCO-baseplates-kfolded-09242022'
 
 
 #wandb artifacts
-logged_model_wandb ='./artifacts/rosy-meadow-247/model-best.h5'
+import wandb
+run = wandb.init()
+artifact = run.use_artifact('aimfg-california/Nigel-Baseplates-2022/model-rosy-meadow-247:v0', type='model')
+artifact_dir = artifact.download()
+
+logged_model_wandb =artifact_dir#'./artifacts/rosy-meadow-247/model-best.h5'
 
 
 
